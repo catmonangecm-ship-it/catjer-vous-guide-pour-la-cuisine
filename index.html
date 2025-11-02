@@ -485,3 +485,2208 @@ const recettesPredefinies = [{"id": 1, "nom": "Pâtes Carbonara", "cat": "Pâtes
     </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificateur de Repas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+            background: linear-gradient(45deg, #FF6B9D, #C06C84, #6C5B7B, #355C7D);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: bounceIn 0.6s ease;
+            border: 5px solid #FF6B9D;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .header h1 {
+            background: linear-gradient(45deg, #FF6B9D, #FFA07A, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1em;
+            margin-bottom: 5px;
+        }
+
+        .credit {
+            color: #999;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-bar {
+            width: 100%;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 4px solid #FF6B9D;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.4);
+            transform: scale(1.02);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(255, 107, 157, 0.5);
+        }
+
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #FF6B9D;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .api-source {
+            display: inline-block;
+            background: linear-gradient(135deg, #9370DB, #BA55D3);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .nav-btn {
+            background: white;
+            border: 4px solid #FF6B9D;
+            padding: 18px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+            color: #FF6B9D;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-5px) rotate(2deg);
+            box-shadow: 0 12px 30px rgba(255, 107, 157, 0.5);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease;
+            border: 5px solid #FFD700;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card h2 {
+            background: linear-gradient(45deg, #FF6B9D, #FFA07A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .filter-btn {
+            background: linear-gradient(135deg, #FFE5EC, #FFF0F5);
+            border: 3px solid #FF6B9D;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            color: #FF6B9D;
+        }
+
+        .filter-btn:hover {
+            transform: scale(1.1) rotate(-2deg);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border-color: white;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.5);
+        }
+
+        .recette-list {
+            max-height: 600px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .recette-item {
+            border: 4px solid #FFD700;
+            border-radius: 20px;
+            padding: 20px;
+            cursor: grab;
+            transition: all 0.3s;
+            position: relative;
+            background: linear-gradient(135deg, #FFF9E6, #FFFEF0);
+        }
+
+        .recette-item:active {
+            cursor: grabbing;
+        }
+
+        .recette-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .recette-item:hover {
+            border-color: #FF6B9D;
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.4);
+            transform: translateX(10px) rotate(1deg);
+        }
+
+        .recette-item.perso {
+            border-color: #00CED1;
+            background: linear-gradient(135deg, #E0FFFF, #F0FFFF);
+        }
+
+        .recette-item h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .rating {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .star {
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+        .star.filled {
+            color: #FFD700;
+        }
+
+        .star.empty {
+            color: #ddd;
+        }
+
+        .rating-display {
+            font-size: 0.85em;
+            color: #666;
+            margin-left: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-right: 10px;
+            box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3);
+        }
+
+        .badge.perso {
+            background: linear-gradient(135deg, #00CED1, #20B2AA);
+        }
+
+        .delete-mini-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #FF1744, #FF5252);
+            color: white;
+            border: 3px solid white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(255, 23, 68, 0.4);
+            transition: all 0.3s;
+        }
+
+        .delete-mini-btn:hover {
+            transform: rotate(90deg) scale(1.2);
+        }
+
+        .planning-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .jour-item {
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            padding: 12px;
+            background: linear-gradient(135deg, #FFF9E6, #FFFEF0);
+        }
+
+        .jour-header {
+            margin-bottom: 10px;
+        }
+
+        .jour-header h3 {
+            color: #FF6B9D;
+            font-size: 1.1em;
+        }
+
+        .repas-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .repas-slot {
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            border: 3px dashed #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            min-height: 70px;
+            transition: all 0.3s;
+        }
+
+        .repas-slot.drag-over {
+            border-color: #FF6B9D;
+            background: linear-gradient(135deg, #FFE5EC, #FFF0F5);
+            transform: scale(1.05);
+        }
+
+        .repas-slot.midi {
+            border-left: 6px solid #FFD700;
+        }
+
+        .repas-slot.soir {
+            border-left: 6px solid #9370DB;
+        }
+
+        .repas-label {
+            font-weight: bold;
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .repas-content {
+            min-height: 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .repas-content.empty {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .plat-info {
+            font-weight: bold;
+            color: #FF6B9D;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #FF1744, #FF5252);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.7em;
+            margin-top: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(255, 23, 68, 0.3);
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .liste-courses {
+            display: grid;
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #FFE5EC, #FFF0F5);
+            border-radius: 15px;
+            font-weight: 500;
+            border: 3px solid #FF6B9D;
+            transition: all 0.3s;
+        }
+
+        .ingredient-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+        }
+
+        .ingredient-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .copy-ingredient-btn {
+            background: linear-gradient(135deg, #00CED1, #20B2AA);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 206, 209, 0.3);
+        }
+
+        .copy-ingredient-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 206, 209, 0.5);
+        }
+
+        .search-ingredient-btn {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3);
+        }
+
+        .search-ingredient-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(255, 107, 157, 0.5);
+        }
+
+        .ingredient-item.copied {
+            background: linear-gradient(135deg, #C8E6C9, #E8F5E9);
+            border-color: #4CAF50;
+        }
+
+        .check-mark {
+            color: #4CAF50;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .supermarche-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .supermarche-btn {
+            padding: 25px;
+            border: 4px solid white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .supermarche-btn:hover {
+            transform: translateY(-8px) rotate(-2deg);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .carrefour { background: linear-gradient(135deg, #0055a5, #003d7a); }
+        .auchan { background: linear-gradient(135deg, #ed1c24, #b71c1c); }
+        .leclerc { background: linear-gradient(135deg, #00a651, #007c3d); }
+        .intermarche { background: linear-gradient(135deg, #ff6b35, #f74902); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-results {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 6px solid #FF6B9D;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            to { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            padding: 35px;
+            border-radius: 24px 24px 0 0;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            color: #FF6B9D;
+            font-size: 28px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg) scale(1.2);
+        }
+
+        .modal-body {
+            padding: 35px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FF6B9D;
+            font-size: 1.1em;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FF6B9D;
+            box-shadow: 0 0 15px rgba(255, 107, 157, 0.3);
+        }
+
+        .ingredient-inputs {
+            display: grid;
+            gap: 12px;
+        }
+
+        .ingredient-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border: 4px solid white;
+            padding: 18px 35px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 25px;
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(255, 107, 157, 0.6);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #00CED1, #20B2AA);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.3em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            transform: scale(1.2) rotate(90deg);
+        }
+
+        .btn-remove {
+            background: linear-gradient(135deg, #FF1744, #FF5252);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-remove:hover {
+            transform: scale(1.2);
+        }
+
+        .repas-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .repas-btn {
+            padding: 15px;
+            border: 3px solid #FFD700;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .repas-btn:hover {
+            border-color: #FF6B9D;
+            transform: scale(1.05);
+        }
+
+        .repas-btn.selected {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            border-color: white;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
+        }
+
+        .etapes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .etape-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .etape-number {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3);
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #FFE5EC;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #FF6B9D, #FFA07A);
+            border-radius: 10px;
+        }
+
+        .courses-badge {
+            background: linear-gradient(135deg, #FF1744, #FF5252);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #9370DB, #6A5ACD);
+            color: white;
+            border: 4px solid white;
+            padding: 18px;
+            border-radius: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 25px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(147, 112, 219, 0.4);
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(147, 112, 219, 0.6);
+        }
+
+        .instruction-box {
+            background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+            border: 3px solid #2196F3;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            color: #1565C0;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .instruction-box strong {
+            color: #0D47A1;
+            font-size: 1.1em;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(147, 112, 219, 0.6);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍳 Planificateur de Repas</h1>
+            <p>Organisez vos repas de la semaine facilement !</p>
+            <p class="credit">by Dory Bis</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="changerVue('recettes')">📚 Recettes</button>
+            <button class="nav-btn" onclick="changerVue('planning')">📅 Planning</button>
+            <button class="nav-btn" onclick="changerVue('courses')">🛒 Courses<span id="courses-badge"></span></button>
+            <button class="nav-btn" onclick="ouvrirModalNouvelleRecette()">➕ Nouvelle Recette</button>
+            <button class="nav-btn" onclick="ouvrirModalIA()">🤖 Inventer avec IA</button>
+        </div>
+
+        <!-- VUE RECETTES -->
+        <div id="view-recettes" class="view active">
+            <div class="content">
+                <div class="card">
+                    <h2>📖 Recettes</h2>
+                    
+                    <p style="color: #666; font-size: 0.85em; margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border-radius: 15px; border: 2px solid #2196F3;">
+                        💡 <strong>Astuce :</strong> Pour ajouter plus de recettes, utilisez le bouton <strong>"➕ Nouvelle Recette"</strong> ci-dessus pour créer vos propres recettes personnalisées !
+                    </p>
+                    
+                    <div class="filters" id="filters"></div>
+                    <div id="loading-recipes" class="loading" style="display:none;">
+                        🔄 Chargement...
+                    </div>
+                    <div class="recette-list" id="recette-list"></div>
+                </div>
+
+                <div class="card">
+                    <h2>📅 Planning Semaine</h2>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 0.85em;">
+                        💡 <strong>Glissez-déposez</strong> une recette ou <strong>cliquez</strong> pour les détails
+                    </p>
+                    <div class="planning-grid" id="planning-rapide"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VUE PLANNING -->
+        <div id="view-planning" class="view">
+            <div class="card">
+                <h2>📅 Planning Hebdo</h2>
+                <div class="planning-grid" id="planning-complet"></div>
+            </div>
+        </div>
+
+        <!-- VUE COURSES -->
+        <div id="view-courses" class="view">
+            <div class="card">
+                <h2>🛒 Ma Liste de Courses</h2>
+                <div id="courses-content"></div>
+            </div>
+            
+            <div class="card" id="supermarches-section" style="display:none; margin-top: 25px;">
+                <h2>🏪 Faire vos Courses en Ligne</h2>
+                
+                <div class="instruction-box">
+                    <strong>🔍 Deux méthodes selon votre supermarché :</strong><br>
+                    <strong style="color: #0D47A1;">🛒 Carrefour & Auchan :</strong> Cliquez sur "Rechercher" → résultats directs<br>
+                    <strong style="color: #0D47A1;">🛍️ Leclerc & Intermarché :</strong> Cliquez sur "Copier" → Collez sur le site
+                </div>
+
+                <div class="supermarche-grid" style="margin-bottom: 30px;">
+                    <button class="supermarche-btn carrefour" onclick="choisirSupermarche('Carrefour', 'https://www.carrefour.fr/s?q=', true)">
+                        🛒 Carrefour
+                    </button>
+                    <button class="supermarche-btn auchan" onclick="choisirSupermarche('Auchan', 'https://www.auchan.fr/recherche?text=', true)">
+                        🏪 Auchan
+                    </button>
+                    <button class="supermarche-btn leclerc" onclick="choisirSupermarche('Leclerc Drive', 'https://www.leclercdrive.fr', false)">
+                        🛍️ Leclerc Drive
+                    </button>
+                    <button class="supermarche-btn intermarche" onclick="choisirSupermarche('Intermarché', 'https://www.intermarche.com', false)">
+                        🏬 Intermarché
+                    </button>
+                </div>
+
+                <div id="supermarche-choisi" style="display:none;">
+                    <div style="background: linear-gradient(135deg, #4CAF50, #66BB6A); color: white; padding: 15px; border-radius: 15px; text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 1.1em;">
+                        📍 Supermarché sélectionné : <span id="nom-supermarche"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DÉTAIL RECETTE -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="fermerModal()">×</button>
+                <h2 id="modal-titre" style="margin-bottom: 10px;"></h2>
+                <div id="modal-info"></div>
+            </div>
+            <div class="modal-body">
+                <h3 style="color: #FF6B9D; margin-bottom: 20px; font-size: 1.5em;">🛒 Ingrédients</h3>
+                <div id="modal-ingredients" style="display: grid; gap: 10px; margin-bottom: 30px;"></div>
+                
+                <h3 style="color: #FF6B9D; margin: 30px 0 20px; font-size: 1.5em;">👨‍🍳 Préparation</h3>
+                <div id="modal-preparation"></div>
+                
+                <h3 style="color: #FF6B9D; margin: 30px 0 20px; font-size: 1.5em;">📅 Ajouter au planning</h3>
+                <div class="repas-selector" id="modal-repas"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOUVELLE RECETTE -->
+    <div id="modal-nouvelle-recette" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="fermerModalNouvelleRecette()">×</button>
+                <h2>➕ Créer une Nouvelle Recette</h2>
+            </div>
+            <div class="modal-body">
+                <form id="form-nouvelle-recette" onsubmit="sauvegarderNouvelleRecette(event)">
+                    <div class="form-group">
+                        <label>Nom de la recette *</label>
+                        <input type="text" id="nom-recette" required placeholder="Ex: Poulet curry">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Catégorie *</label>
+                        <select id="categorie-recette" required>
+                            <option value="">Choisir...</option>
+                            <option value="Pâtes">Pâtes</option>
+                            <option value="Viandes">Viandes</option>
+                            <option value="Poissons">Poissons</option>
+                            <option value="Végétarien">Végétarien</option>
+                            <option value="Soupes">Soupes</option>
+                            <option value="Salades">Salades</option>
+                            <option value="Tartes">Tartes</option>
+                            <option value="Desserts">Desserts</option>
+                            <option value="Diabétique">Diabétique</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Temps de préparation</label>
+                        <input type="text" id="temps-recette" placeholder="Ex: 30min">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nombre de portions</label>
+                        <input type="number" id="portions-recette" value="4" min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ingrédients *</label>
+                        <div class="ingredient-inputs" id="ingredients-inputs">
+                            <div class="ingredient-row">
+                                <input type="text" placeholder="Nom ingrédient" class="ing-nom" required>
+                                <input type="text" placeholder="Quantité" class="ing-qte" required>
+                                <button type="button" class="btn-add" onclick="ajouterIngredient()">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Étapes de préparation *</label>
+                        <div class="etapes-list" id="etapes-list">
+                            <div class="etape-row">
+                                <div class="etape-number">1</div>
+                                <textarea rows="3" class="etape-text" required placeholder="Décrivez l'étape 1..."></textarea>
+                                <button type="button" class="btn-add" onclick="ajouterEtape()">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">💾 Sauvegarder la Recette</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RÉSULTATS DE RECHERCHE -->
+    <div id="modal-resultats" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="fermerModalResultats()">×</button>
+                <h2 id="titre-resultats">📚 Résultats de recherche</h2>
+            </div>
+            <div class="modal-body modal-results" id="contenu-resultats">
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GÉNÉRATION IA -->
+    <div id="modal-ia" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="fermerModalIA()">×</button>
+                <h2>🤖 Inventer une Recette avec l'IA</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: #666; line-height: 1.6;">
+                    L'IA va inventer une recette <strong>unique et originale</strong> basée sur vos envies !
+                </p>
+                
+                <div class="form-group">
+                    <label>🍽️ Type de plat souhaité *</label>
+                    <select id="ia-type" style="width: 100%; padding: 15px; border: 3px solid #FFD700; border-radius: 15px; font-size: 1em;">
+                        <option value="">Surprise moi !</option>
+                        <option value="entrée">Entrée</option>
+                        <option value="plat principal">Plat principal</option>
+                        <option value="accompagnement">Accompagnement</option>
+                        <option value="dessert">Dessert</option>
+                        <option value="goûter">Goûter</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🥗 Ingrédient principal (optionnel)</label>
+                    <input type="text" id="ia-ingredient" placeholder="Ex: poulet, saumon, chocolat, légumes..." style="width: 100%; padding: 15px; border: 3px solid #FFD700; border-radius: 15px; font-size: 1em;">
+                </div>
+
+                <div class="form-group">
+                    <label>🌍 Style de cuisine (optionnel)</label>
+                    <select id="ia-style" style="width: 100%; padding: 15px; border: 3px solid #FFD700; border-radius: 15px; font-size: 1em;">
+                        <option value="">Peu importe</option>
+                        <option value="française">Française</option>
+                        <option value="italienne">Italienne</option>
+                        <option value="asiatique">Asiatique</option>
+                        <option value="méditerranéenne">Méditerranéenne</option>
+                        <option value="mexicaine">Mexicaine</option>
+                        <option value="végétarienne">Végétarienne</option>
+                        <option value="healthy">Healthy</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>⏱️ Temps de préparation souhaité</label>
+                    <select id="ia-temps" style="width: 100%; padding: 15px; border: 3px solid #FFD700; border-radius: 15px; font-size: 1em;">
+                        <option value="">Peu importe</option>
+                        <option value="moins de 20 minutes">Rapide (moins de 20 min)</option>
+                        <option value="20-40 minutes">Moyen (20-40 min)</option>
+                        <option value="plus de 40 minutes">Long (plus de 40 min)</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="genererRecetteIA()">
+                    ✨ Inventer ma recette !
+                </button>
+
+                <div id="ia-loading" style="display: none; text-align: center; margin-top: 20px; color: #FF6B9D; font-weight: bold;">
+                    🤖 L'IA invente votre recette originale...<br>
+                    <small style="color: #999;">Cela peut prendre 10-15 secondes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const recettesPredefinies = [
+            // PÂTES (6 recettes)
+            { id: 1, nom: "Pâtes Carbonara", cat: "Pâtes", temps: "20min", p: 4, perso: false,
+                ing: [{n:"Spaghetti",q:"400g"}, {n:"Lardons",q:"200g"}, {n:"Œufs",q:"4"}, {n:"Parmesan",q:"100g"}, {n:"Crème",q:"20cl"}],
+                rec: ["Cuire les pâtes al dente.", "Faire revenir les lardons.", "Mélanger œufs, crème et parmesan.", "Ajouter aux pâtes hors du feu.", "Poivrer généreusement."]
+            },
+            { id: 2, nom: "Pâtes Bolognaise", cat: "Pâtes", temps: "45min", p: 4, perso: false,
+                ing: [{n:"Pâtes",q:"400g"}, {n:"Viande hachée",q:"500g"}, {n:"Tomates",q:"800g"}, {n:"Oignons",q:"2"}, {n:"Ail",q:"3 gousses"}],
+                rec: ["Faire revenir oignons et ail.", "Ajouter la viande et dorer.", "Ajouter tomates et herbes.", "Mijoter 30min.", "Servir sur pâtes."]
+            },
+            { id: 3, nom: "Lasagnes", cat: "Pâtes", temps: "1h30", p: 6, perso: false,
+                ing: [{n:"Plaques lasagnes",q:"12"}, {n:"Viande hachée",q:"600g"}, {n:"Béchamel",q:"50cl"}, {n:"Mozzarella",q:"200g"}],
+                rec: ["Préparer bolognaise.", "Alterner pâtes, bolognaise, béchamel.", "Terminer par fromages.", "Four 180°C 40min."]
+            },
+            { id: 4, nom: "Pâtes aux Fruits de Mer", cat: "Pâtes", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Linguine",q:"400g"}, {n:"Fruits de mer",q:"500g"}, {n:"Ail",q:"4 gousses"}, {n:"Vin blanc",q:"15cl"}, {n:"Persil",q:"1 bouquet"}],
+                rec: ["Cuire les pâtes.", "Faire revenir ail dans huile d'olive.", "Ajouter fruits de mer et vin blanc.", "Mélanger avec pâtes et persil.", "Servir immédiatement."]
+            },
+            { id: 5, nom: "Pâtes Pesto", cat: "Pâtes", temps: "15min", p: 4, perso: false,
+                ing: [{n:"Pâtes courtes",q:"400g"}, {n:"Pesto",q:"150g"}, {n:"Tomates cerises",q:"250g"}, {n:"Parmesan",q:"80g"}, {n:"Pignons",q:"50g"}],
+                rec: ["Cuire les pâtes.", "Griller les pignons.", "Mélanger pâtes chaudes avec pesto.", "Ajouter tomates coupées.", "Parsemer de parmesan et pignons."]
+            },
+            { id: 6, nom: "Pâtes Crème Champignons", cat: "Pâtes", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Tagliatelles",q:"400g"}, {n:"Champignons",q:"500g"}, {n:"Crème fraîche",q:"30cl"}, {n:"Échalotes",q:"3"}, {n:"Persil",q:"1 bouquet"}],
+                rec: ["Cuire les pâtes.", "Faire revenir échalotes et champignons.", "Ajouter crème et laisser réduire.", "Mélanger avec pâtes.", "Parsemer de persil."]
+            },
+            
+            // VIANDES (6 recettes)
+            { id: 7, nom: "Poulet Rôti", cat: "Viandes", temps: "1h30", p: 4, perso: false,
+                ing: [{n:"Poulet",q:"1.5kg"}, {n:"Pommes de terre",q:"800g"}, {n:"Carottes",q:"500g"}, {n:"Herbes",q:"2 c.à.s"}],
+                rec: ["Préchauffer four 200°C.", "Assaisonner le poulet.", "Disposer légumes autour.", "Enfourner 1h30.", "Arroser régulièrement."]
+            },
+            { id: 8, nom: "Poulet Curry", cat: "Viandes", temps: "35min", p: 4, perso: false,
+                ing: [{n:"Blancs de poulet",q:"4"}, {n:"Curry",q:"3 c.à.s"}, {n:"Lait coco",q:"40cl"}, {n:"Oignons",q:"2"}, {n:"Riz",q:"300g"}],
+                rec: ["Couper poulet en morceaux.", "Faire revenir avec oignons.", "Ajouter curry et lait coco.", "Mijoter 20min.", "Servir avec riz."]
+            },
+            { id: 9, nom: "Bœuf Bourguignon", cat: "Viandes", temps: "2h30", p: 6, perso: false,
+                ing: [{n:"Bœuf",q:"1kg"}, {n:"Vin rouge",q:"75cl"}, {n:"Carottes",q:"4"}, {n:"Oignons",q:"3"}, {n:"Lardons",q:"200g"}],
+                rec: ["Faire dorer la viande.", "Ajouter légumes et lardons.", "Mouiller au vin rouge.", "Mijoter 2h à feu doux.", "Servir avec pâtes."]
+            },
+            { id: 10, nom: "Escalope Milanaise", cat: "Viandes", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Escalopes veau",q:"4"}, {n:"Chapelure",q:"150g"}, {n:"Œufs",q:"2"}, {n:"Parmesan",q:"50g"}, {n:"Citron",q:"2"}],
+                rec: ["Aplatir les escalopes.", "Paner avec œuf puis chapelure-parmesan.", "Faire frire 3min par côté.", "Servir avec citron.", "Accompagner de salade."]
+            },
+            { id: 11, nom: "Côtes Agneau Grillées", cat: "Viandes", temps: "20min", p: 4, perso: false,
+                ing: [{n:"Côtes d'agneau",q:"8"}, {n:"Romarin",q:"3 branches"}, {n:"Ail",q:"4 gousses"}, {n:"Huile olive",q:"4 c.à.s"}],
+                rec: ["Mariner agneau 1h.", "Préchauffer grill.", "Griller 3-4min par côté.", "Laisser reposer 5min.", "Servir avec légumes."]
+            },
+            { id: 12, nom: "Blanquette de Veau", cat: "Viandes", temps: "2h", p: 6, perso: false,
+                ing: [{n:"Veau",q:"1kg"}, {n:"Carottes",q:"3"}, {n:"Champignons",q:"300g"}, {n:"Crème",q:"20cl"}, {n:"Citron",q:"1"}],
+                rec: ["Cuire veau dans bouillon 1h30.", "Ajouter carottes et champignons.", "Lier sauce avec crème.", "Ajouter jus de citron.", "Servir avec riz."]
+            },
+            
+            // POISSONS (4 recettes)
+            { id: 13, nom: "Saumon Grillé", cat: "Poissons", temps: "20min", p: 4, perso: false,
+                ing: [{n:"Filets saumon",q:"4"}, {n:"Citron",q:"2"}, {n:"Aneth",q:"1 bouquet"}, {n:"Beurre",q:"50g"}],
+                rec: ["Cuire saumon 4min côté peau.", "Retourner 3min.", "Ajouter beurre citronné.", "Parsemer d'aneth.", "Servir avec légumes."]
+            },
+            { id: 14, nom: "Cabillaud au Four", cat: "Poissons", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Filets cabillaud",q:"4"}, {n:"Tomates",q:"4"}, {n:"Olives",q:"100g"}, {n:"Basilic",q:"1 bouquet"}, {n:"Ail",q:"3 gousses"}],
+                rec: ["Disposer poisson dans plat.", "Ajouter tomates, olives, ail.", "Arroser d'huile d'olive.", "Four 180°C 25min.", "Parsemer de basilic."]
+            },
+            { id: 15, nom: "Sole Meunière", cat: "Poissons", temps: "15min", p: 4, perso: false,
+                ing: [{n:"Soles",q:"4"}, {n:"Farine",q:"100g"}, {n:"Beurre",q:"100g"}, {n:"Citron",q:"2"}, {n:"Persil",q:"1 bouquet"}],
+                rec: ["Fariner les soles.", "Cuire au beurre 3min par côté.", "Faire mousser le beurre.", "Ajouter jus de citron.", "Parsemer de persil."]
+            },
+            { id: 16, nom: "Dorade Sauce Vierge", cat: "Poissons", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Filets dorade",q:"4"}, {n:"Tomates",q:"4"}, {n:"Basilic",q:"1 bouquet"}, {n:"Huile olive",q:"10cl"}, {n:"Citron",q:"1"}],
+                rec: ["Griller les filets.", "Concasser tomates avec basilic.", "Mélanger avec huile et citron.", "Verser sauce sur poisson.", "Servir tiède."]
+            },
+            
+            // VÉGÉTARIEN (5 recettes)
+            { id: 17, nom: "Curry de Légumes", cat: "Végétarien", temps: "40min", p: 4, perso: false,
+                ing: [{n:"Lait coco",q:"40cl"}, {n:"Curry",q:"3 c.à.s"}, {n:"Patates douces",q:"400g"}, {n:"Pois chiches",q:"1 boîte"}],
+                rec: ["Revenir curry dans huile.", "Ajouter patates douces.", "Ajouter lait coco et mijoter 20min.", "Ajouter pois chiches.", "Servir avec riz."]
+            },
+            { id: 18, nom: "Ratatouille", cat: "Végétarien", temps: "1h", p: 6, perso: false,
+                ing: [{n:"Aubergines",q:"2"}, {n:"Courgettes",q:"3"}, {n:"Poivrons",q:"2"}, {n:"Tomates",q:"6"}],
+                rec: ["Couper légumes en dés.", "Revenir un par un.", "Ajouter tomates et herbes.", "Mijoter 45min.", "Servir chaud ou froid."]
+            },
+            { id: 19, nom: "Gratin Dauphinois", cat: "Végétarien", temps: "1h15", p: 6, perso: false,
+                ing: [{n:"Pommes de terre",q:"1.5kg"}, {n:"Crème",q:"50cl"}, {n:"Lait",q:"25cl"}, {n:"Ail",q:"2 gousses"}, {n:"Gruyère",q:"100g"}],
+                rec: ["Trancher pommes de terre.", "Frotter plat avec ail.", "Alterner couches crème.", "Parsemer de fromage.", "Four 180°C 1h."]
+            },
+            { id: 20, nom: "Buddha Bowl", cat: "Végétarien", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Quinoa",q:"300g"}, {n:"Pois chiches",q:"400g"}, {n:"Avocat",q:"2"}, {n:"Chou rouge",q:"200g"}, {n:"Graines",q:"50g"}],
+                rec: ["Cuire le quinoa.", "Rôtir pois chiches.", "Émincer chou rouge.", "Disposer en cercle.", "Ajouter sauce tahini."]
+            },
+            { id: 21, nom: "Couscous Végétarien", cat: "Végétarien", temps: "50min", p: 6, perso: false,
+                ing: [{n:"Semoule",q:"500g"}, {n:"Courgettes",q:"3"}, {n:"Carottes",q:"4"}, {n:"Pois chiches",q:"400g"}, {n:"Épices",q:"3 c.à.s"}],
+                rec: ["Faire revenir légumes avec épices.", "Ajouter pois chiches et bouillon.", "Mijoter 30min.", "Préparer semoule.", "Servir ensemble."]
+            },
+            
+            // SOUPES (4 recettes)
+            { id: 22, nom: "Soupe à l'Oignon", cat: "Soupes", temps: "1h", p: 4, perso: false,
+                ing: [{n:"Oignons",q:"1kg"}, {n:"Bouillon",q:"1.5L"}, {n:"Pain",q:"4 tranches"}, {n:"Gruyère",q:"150g"}],
+                rec: ["Caraméliser oignons 30min.", "Ajouter bouillon.", "Mijoter 20min.", "Gratiner avec pain et fromage.", "Servir très chaud."]
+            },
+            { id: 23, nom: "Velouté de Potiron", cat: "Soupes", temps: "40min", p: 6, perso: false,
+                ing: [{n:"Potiron",q:"1kg"}, {n:"Pommes de terre",q:"300g"}, {n:"Bouillon",q:"1L"}, {n:"Crème",q:"15cl"}, {n:"Muscade",q:"1 pincée"}],
+                rec: ["Couper légumes.", "Cuire dans bouillon 30min.", "Mixer finement.", "Ajouter crème et muscade.", "Servir avec croûtons."]
+            },
+            { id: 24, nom: "Minestrone", cat: "Soupes", temps: "45min", p: 6, perso: false,
+                ing: [{n:"Haricots blancs",q:"400g"}, {n:"Tomates",q:"400g"}, {n:"Légumes variés",q:"500g"}, {n:"Pâtes courtes",q:"100g"}, {n:"Parmesan",q:"80g"}],
+                rec: ["Faire revenir légumes.", "Ajouter tomates et haricots.", "Mijoter 30min.", "Ajouter pâtes 10min avant.", "Servir avec parmesan."]
+            },
+            { id: 25, nom: "Soupe Miso", cat: "Soupes", temps: "15min", p: 4, perso: false,
+                ing: [{n:"Miso",q:"4 c.à.s"}, {n:"Tofu",q:"200g"}, {n:"Algues wakame",q:"10g"}, {n:"Champignons",q:"150g"}, {n:"Oignons verts",q:"4"}],
+                rec: ["Porter eau à frémissement.", "Délayer miso.", "Ajouter tofu en dés.", "Ajouter algues et champignons.", "Parsemer d'oignons."]
+            },
+            
+            // SALADES (3 recettes)
+            { id: 26, nom: "Salade César", cat: "Salades", temps: "20min", p: 4, perso: false,
+                ing: [{n:"Laitue romaine",q:"2"}, {n:"Poulet",q:"2 blancs"}, {n:"Croûtons",q:"100g"}, {n:"Parmesan",q:"80g"}],
+                rec: ["Griller le poulet.", "Mélanger salade et sauce.", "Ajouter croûtons et parmesan.", "Servir frais."]
+            },
+            { id: 27, nom: "Salade Niçoise", cat: "Salades", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Thon",q:"300g"}, {n:"Tomates",q:"4"}, {n:"Œufs",q:"4"}, {n:"Haricots verts",q:"200g"}, {n:"Olives",q:"100g"}],
+                rec: ["Cuire œufs durs et haricots.", "Couper tomates.", "Disposer tous ingrédients.", "Ajouter thon émietté.", "Assaisonner vinaigrette."]
+            },
+            { id: 28, nom: "Taboulé", cat: "Salades", temps: "30min", p: 6, perso: false,
+                ing: [{n:"Semoule fine",q:"300g"}, {n:"Tomates",q:"5"}, {n:"Concombre",q:"1"}, {n:"Menthe",q:"1 bouquet"}, {n:"Citron",q:"3"}],
+                rec: ["Hydrater semoule.", "Concasser tomates et concombre.", "Hacher menthe.", "Mélanger tous ingrédients.", "Assaisonner citron."]
+            },
+            
+            // TARTES (3 recettes)
+            { id: 29, nom: "Quiche Lorraine", cat: "Tartes", temps: "55min", p: 6, perso: false,
+                ing: [{n:"Pâte brisée",q:"1"}, {n:"Lardons",q:"200g"}, {n:"Œufs",q:"3"}, {n:"Crème",q:"200ml"}, {n:"Gruyère",q:"100g"}],
+                rec: ["Étaler pâte.", "Disposer lardons.", "Verser mélange œufs-crème.", "Ajouter fromage.", "Four 180°C 40min."]
+            },
+            { id: 30, nom: "Tarte aux Poireaux", cat: "Tartes", temps: "50min", p: 6, perso: false,
+                ing: [{n:"Pâte brisée",q:"1"}, {n:"Poireaux",q:"4"}, {n:"Crème",q:"20cl"}, {n:"Œufs",q:"2"}, {n:"Fromage",q:"100g"}],
+                rec: ["Faire fondre poireaux.", "Disposer sur pâte.", "Verser mélange œufs-crème.", "Parsemer de fromage.", "Four 180°C 35min."]
+            },
+            { id: 31, nom: "Tarte Tomates Mozza", cat: "Tartes", temps: "45min", p: 6, perso: false,
+                ing: [{n:"Pâte feuilletée",q:"1"}, {n:"Tomates",q:"6"}, {n:"Mozzarella",q:"250g"}, {n:"Basilic",q:"1 bouquet"}, {n:"Moutarde",q:"2 c.à.s"}],
+                rec: ["Étaler pâte.", "Badigeonner de moutarde.", "Disposer tomates.", "Ajouter mozzarella.", "Four 180°C 35min."]
+            },
+            
+            // DESSERTS (5 recettes)
+            { id: 32, nom: "Tiramisu", cat: "Desserts", temps: "4h", p: 8, perso: false,
+                ing: [{n:"Mascarpone",q:"500g"}, {n:"Œufs",q:"4"}, {n:"Sucre",q:"100g"}, {n:"Biscuits",q:"300g"}, {n:"Café",q:"30cl"}],
+                rec: ["Battre jaunes et sucre.", "Ajouter mascarpone.", "Monter blancs en neige.", "Tremper biscuits.", "Alterner couches et réfrigérer 4h."]
+            },
+            { id: 33, nom: "Tarte aux Pommes", cat: "Desserts", temps: "50min", p: 6, perso: false,
+                ing: [{n:"Pâte sablée",q:"1"}, {n:"Pommes",q:"6"}, {n:"Sucre",q:"80g"}, {n:"Cannelle",q:"1 c.à.c"}],
+                rec: ["Étaler pâte.", "Disposer pommes en rosace.", "Saupoudrer sucre et cannelle.", "Four 180°C 40min.", "Servir tiède."]
+            },
+            { id: 34, nom: "Fondant Chocolat", cat: "Desserts", temps: "30min", p: 6, perso: false,
+                ing: [{n:"Chocolat noir",q:"200g"}, {n:"Beurre",q:"150g"}, {n:"Œufs",q:"4"}, {n:"Sucre",q:"150g"}, {n:"Farine",q:"50g"}],
+                rec: ["Fondre chocolat et beurre.", "Battre œufs et sucre.", "Mélanger le tout.", "Ajouter farine.", "Four 180°C 15-20min."]
+            },
+            { id: 35, nom: "Crème Brûlée", cat: "Desserts", temps: "4h", p: 6, perso: false,
+                ing: [{n:"Crème liquide",q:"50cl"}, {n:"Jaunes d'œufs",q:"6"}, {n:"Sucre",q:"100g"}, {n:"Vanille",q:"1 gousse"}],
+                rec: ["Infuser vanille dans crème.", "Mélanger jaunes et sucre.", "Incorporer crème.", "Cuire au bain-marie 160°C 40min.", "Réfrigérer puis caraméliser."]
+            },
+            { id: 36, nom: "Mousse au Chocolat", cat: "Desserts", temps: "3h", p: 6, perso: false,
+                ing: [{n:"Chocolat noir",q:"200g"}, {n:"Œufs",q:"6"}, {n:"Sucre",q:"50g"}],
+                rec: ["Fondre chocolat.", "Séparer blancs et jaunes.", "Mélanger jaunes au chocolat.", "Monter blancs en neige.", "Incorporer et réfrigérer 2h."]
+            },
+            
+            // DIABÉTIQUE (20 recettes)
+            { id: 37, nom: "Poulet Vapeur Légumes", cat: "Diabétique", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Blancs de poulet",q:"4"}, {n:"Brocolis",q:"400g"}, {n:"Haricots verts",q:"300g"}, {n:"Citron",q:"1"}, {n:"Herbes",q:"2 c.à.s"}],
+                rec: ["Cuire poulet vapeur 20min.", "Cuire légumes vapeur 15min.", "Assaisonner citron et herbes.", "Servir avec filet d'huile.", "Sans sauces grasses."]
+            },
+            { id: 38, nom: "Saumon aux Épinards", cat: "Diabétique", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Filets saumon",q:"4"}, {n:"Épinards frais",q:"500g"}, {n:"Ail",q:"2 gousses"}, {n:"Citron",q:"1"}],
+                rec: ["Cuire saumon au four 180°C 15min.", "Faire tomber épinards avec ail.", "Servir saumon sur épinards.", "Arroser de citron.", "Sans matières grasses."]
+            },
+            { id: 39, nom: "Salade de Lentilles", cat: "Diabétique", temps: "35min", p: 4, perso: false,
+                ing: [{n:"Lentilles vertes",q:"300g"}, {n:"Tomates",q:"3"}, {n:"Concombre",q:"1"}, {n:"Oignon rouge",q:"1"}, {n:"Persil",q:"1 bouquet"}],
+                rec: ["Cuire lentilles 25min.", "Couper légumes en dés.", "Mélanger lentilles refroidies.", "Vinaigrette légère.", "Riche en fibres IG bas."]
+            },
+            { id: 40, nom: "Poisson en Papillote", cat: "Diabétique", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Filets cabillaud",q:"4"}, {n:"Courgettes",q:"2"}, {n:"Tomates cerises",q:"200g"}, {n:"Basilic",q:"1 bouquet"}, {n:"Citron",q:"1"}],
+                rec: ["Couper légumes.", "Disposer en papillote.", "Ajouter herbes et citron.", "Four 180°C 20min.", "Sans matières grasses."]
+            },
+            { id: 41, nom: "Soupe Légumes Maison", cat: "Diabétique", temps: "40min", p: 6, perso: false,
+                ing: [{n:"Carottes",q:"3"}, {n:"Poireaux",q:"2"}, {n:"Céleri",q:"2 branches"}, {n:"Courgettes",q:"2"}, {n:"Bouillon",q:"1.5L"}],
+                rec: ["Couper tous légumes.", "Faire revenir sans MG.", "Ajouter bouillon 30min.", "Mixer ou laisser morceaux.", "Sans pommes de terre."]
+            },
+            { id: 42, nom: "Omelette Champignons", cat: "Diabétique", temps: "15min", p: 2, perso: false,
+                ing: [{n:"Œufs",q:"4"}, {n:"Champignons",q:"200g"}, {n:"Oignon",q:"1"}, {n:"Persil",q:"1 bouquet"}],
+                rec: ["Revenir champignons et oignon.", "Battre les œufs.", "Verser sur champignons.", "Cuire à feu doux.", "Riche protéines 0 glucides."]
+            },
+            { id: 43, nom: "Dinde Haricots Verts", cat: "Diabétique", temps: "35min", p: 4, perso: false,
+                ing: [{n:"Escalopes dinde",q:"4"}, {n:"Haricots verts",q:"600g"}, {n:"Tomates",q:"3"}, {n:"Oignon",q:"1"}, {n:"Herbes Provence",q:"1 c.à.s"}],
+                rec: ["Cuire haricots vapeur.", "Griller escalopes sans MG.", "Sauce tomate légère.", "Servir ensemble.", "Repas équilibré léger."]
+            },
+            { id: 44, nom: "Salade Quinoa Légumes", cat: "Diabétique", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Quinoa",q:"250g"}, {n:"Poivrons",q:"2"}, {n:"Concombre",q:"1"}, {n:"Tomates cerises",q:"200g"}, {n:"Menthe",q:"1 bouquet"}],
+                rec: ["Cuire quinoa.", "Couper légumes en dés.", "Mélanger quinoa refroidi.", "Assaisonner citron.", "IG bas riche protéines."]
+            },
+            { id: 45, nom: "Ratatouille Légère", cat: "Diabétique", temps: "45min", p: 6, perso: false,
+                ing: [{n:"Aubergines",q:"2"}, {n:"Courgettes",q:"3"}, {n:"Poivrons",q:"2"}, {n:"Tomates",q:"5"}, {n:"Ail",q:"3 gousses"}],
+                rec: ["Couper légumes.", "Cuire séparément sans huile.", "Mélanger tous légumes.", "Ajouter tomates et ail.", "Mijoter 30min 100% légumes."]
+            },
+            { id: 46, nom: "Cabillaud Légumes Grillés", cat: "Diabétique", temps: "35min", p: 4, perso: false,
+                ing: [{n:"Filets cabillaud",q:"4"}, {n:"Courgettes",q:"2"}, {n:"Aubergine",q:"1"}, {n:"Poivrons",q:"2"}, {n:"Thym",q:"2 branches"}],
+                rec: ["Trancher légumes finement.", "Griller légumes au four.", "Cuire cabillaud 180°C 15min.", "Servir poisson sur légumes.", "Minimal en MG."]
+            },
+            { id: 47, nom: "Curry Poulet Léger", cat: "Diabétique", temps: "40min", p: 4, perso: false,
+                ing: [{n:"Blancs poulet",q:"4"}, {n:"Curry",q:"2 c.à.s"}, {n:"Lait coco light",q:"30cl"}, {n:"Brocolis",q:"400g"}, {n:"Oignon",q:"1"}],
+                rec: ["Couper poulet.", "Faire revenir avec curry.", "Ajouter lait coco allégé.", "Ajouter brocolis.", "Mijoter 25min sans riz."]
+            },
+            { id: 48, nom: "Courgettes Farcies", cat: "Diabétique", temps: "50min", p: 4, perso: false,
+                ing: [{n:"Courgettes",q:"4"}, {n:"Viande hachée 5%",q:"300g"}, {n:"Tomates",q:"2"}, {n:"Oignon",q:"1"}, {n:"Herbes",q:"2 c.à.s"}],
+                rec: ["Évider courgettes.", "Préparer farce viande-tomates.", "Farcir courgettes.", "Four 180°C 35min.", "Sans fromage ajouté."]
+            },
+            { id: 49, nom: "Salade Grecque Light", cat: "Diabétique", temps: "15min", p: 4, perso: false,
+                ing: [{n:"Tomates",q:"4"}, {n:"Concombre",q:"1"}, {n:"Poivron",q:"1"}, {n:"Olives",q:"50g"}, {n:"Feta allégée",q:"100g"}],
+                rec: ["Couper légumes en dés.", "Ajouter olives et feta.", "Assaisonner huile citron.", "Ajouter origan.", "Frais peu calorique."]
+            },
+            { id: 50, nom: "Poulet Grillé Épicé", cat: "Diabétique", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Blancs poulet",q:"4"}, {n:"Paprika",q:"1 c.à.s"}, {n:"Cumin",q:"1 c.à.c"}, {n:"Citron",q:"1"}, {n:"Salade verte",q:"400g"}],
+                rec: ["Mariner poulet épices citron.", "Griller sans MG.", "Servir avec salade.", "Vinaigre balsamique.", "Protéines pures 0 glucides."]
+            },
+            { id: 51, nom: "Velouté Brocolis Sans Crème", cat: "Diabétique", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Brocolis",q:"800g"}, {n:"Bouillon",q:"1L"}, {n:"Oignon",q:"1"}, {n:"Ail",q:"2 gousses"}],
+                rec: ["Revenir oignon et ail.", "Ajouter brocolis et bouillon.", "Cuire 20min.", "Mixer finement.", "Sans crème onctueux naturel."]
+            },
+            { id: 52, nom: "Pavé Saumon Asperges", cat: "Diabétique", temps: "25min", p: 4, perso: false,
+                ing: [{n:"Pavés saumon",q:"4"}, {n:"Asperges vertes",q:"500g"}, {n:"Citron",q:"1"}, {n:"Aneth",q:"1 bouquet"}],
+                rec: ["Cuire asperges vapeur 10min.", "Griller saumon 4min côté.", "Arroser de citron.", "Parsemer d'aneth.", "Oméga-3 légumes verts."]
+            },
+            { id: 53, nom: "Tomates Farcies Légères", cat: "Diabétique", temps: "1h", p: 4, perso: false,
+                ing: [{n:"Grosses tomates",q:"8"}, {n:"Viande hachée 5%",q:"400g"}, {n:"Oignon",q:"1"}, {n:"Persil",q:"1 bouquet"}, {n:"Ail",q:"2 gousses"}],
+                rec: ["Évider tomates.", "Préparer farce viande-herbes.", "Farcir tomates.", "Four 180°C 45min.", "Sans riz dans farce."]
+            },
+            { id: 54, nom: "Poulet Tandoori Sans Yaourt", cat: "Diabétique", temps: "2h30", p: 4, perso: false,
+                ing: [{n:"Cuisses poulet",q:"8"}, {n:"Épices tandoori",q:"3 c.à.s"}, {n:"Citron",q:"2"}, {n:"Ail",q:"4 gousses"}],
+                rec: ["Mariner poulet 2h épices citron.", "Four 200°C 40min.", "Servir avec légumes verts.", "Sans yaourt ni MG.", "Savoureux et sain."]
+            },
+            { id: 55, nom: "Wok Légumes Tofu", cat: "Diabétique", temps: "20min", p: 4, perso: false,
+                ing: [{n:"Tofu ferme",q:"400g"}, {n:"Brocolis",q:"300g"}, {n:"Poivrons",q:"2"}, {n:"Champignons",q:"200g"}, {n:"Sauce soja",q:"3 c.à.s"}],
+                rec: ["Couper tofu et légumes.", "Sauter au wok sans huile.", "Ajouter sauce soja.", "Cuire 10min feu vif.", "Protéines végétales IG bas."]
+            },
+            { id: 56, nom: "Lieu Noir Petits Légumes", cat: "Diabétique", temps: "30min", p: 4, perso: false,
+                ing: [{n:"Filets lieu noir",q:"4"}, {n:"Carottes",q:"3"}, {n:"Navets",q:"2"}, {n:"Haricots verts",q:"200g"}, {n:"Citron",q:"1"}],
+                rec: ["Cuire légumes vapeur.", "Poêler poisson 3min côté.", "Servir ensemble.", "Arroser jus de citron.", "Repas complet léger."]
+            }
+        ];
+
+        const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+        const categories = ['Tous', 'Pâtes', 'Viandes', 'Poissons', 'Végétarien', 'Soupes', 'Salades', 'Tartes', 'Desserts', 'Diabétique', 'Mes Recettes'];
+        
+        let recettesPerso = [];
+        let planning = {};
+        let notations = {};
+        let categorieActive = 'Tous';
+        let recetteActive = null;
+        let prochainId = 100;
+        let ingredientsCopies = new Set();
+        let supermarcheChoisi = null;
+        let urlSupermarche = null;
+        let rechercheDirecte = false;
+        let recettesAPI = [];
+
+        function getToutesRecettes() {
+            return [...recettesPredefinies, ...recettesPerso, ...recettesAPI];
+        }
+
+        function init() {
+            chargerDonnees();
+            afficherFiltres();
+            afficherRecettes();
+            afficherPlanning();
+            mettreAJourBadgeCourses();
+        }
+
+        function chargerDonnees() {
+            const savedRecettes = localStorage.getItem('recettesPerso');
+            const savedPlanning = localStorage.getItem('planning');
+            const savedNotations = localStorage.getItem('notations');
+            
+            if (savedRecettes) {
+                recettesPerso = JSON.parse(savedRecettes);
+                prochainId = Math.max(...recettesPerso.map(r => r.id), 100) + 1;
+            }
+            if (savedPlanning) {
+                planning = JSON.parse(savedPlanning);
+            }
+            if (savedNotations) {
+                notations = JSON.parse(savedNotations);
+            }
+        }
+
+        function afficherFiltres() {
+            const filtersDiv = document.getElementById('filters');
+            filtersDiv.innerHTML = categories.map(cat => 
+                `<button class="filter-btn ${cat === categorieActive ? 'active' : ''}" 
+                        onclick="changerCategorie('${cat}')">${cat}</button>`
+            ).join('');
+        }
+
+        function changerCategorie(cat) {
+            categorieActive = cat;
+            afficherFiltres();
+            afficherRecettes();
+        }
+
+        function afficherRecettes() {
+            const listDiv = document.getElementById('recette-list');
+            let recettes = getToutesRecettes();
+            
+            if (categorieActive === 'Mes Recettes') {
+                recettes = recettes.filter(r => r.perso);
+            } else if (categorieActive !== 'Tous') {
+                recettes = recettes.filter(r => r.cat === categorieActive);
+            }
+            
+            if (recettes.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🍽️</div>
+                        <h3>Aucune recette</h3>
+                        <p>Recherchez des recettes en ligne ou créez les vôtres !</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listDiv.innerHTML = recettes.map(r => {
+                const note = notations[r.id] || 0;
+                const noteAffichee = note > 0 ? `${note}/5` : 'Non noté';
+                const sourceAPI = r.source ? `<span class="api-source">${r.source}</span>` : '';
+                return `
+                <div class="recette-item ${r.perso ? 'perso' : ''}" 
+                     draggable="true" 
+                     data-recette-id="${r.id}"
+                     ondragstart="dragStart(event)"
+                     ondragend="dragEnd(event)"
+                     onclick="ouvrirModal(${r.id})">
+                    ${r.perso ? '<button class="delete-mini-btn" onclick="event.stopPropagation(); supprimerRecette(' + r.id + ')">×</button>' : ''}
+                    <span class="badge ${r.perso ? 'perso' : ''}">${r.perso ? 'MA RECETTE' : r.cat}</span>${sourceAPI}
+                    <h3>${r.nom}</h3>
+                    <div style="display: flex; gap: 15px; color: #666; font-size: 0.95em;">
+                        <span>⏱️ ${r.temps || 'N/A'}</span>
+                        <span>👥 ${r.p} pers.</span>
+                    </div>
+                    <div class="rating" onclick="event.stopPropagation()">
+                        ${[1,2,3,4,5].map(etoile => `
+                            <span class="star ${etoile <= note ? 'filled' : 'empty'}" 
+                                  onclick="noterRecette(${r.id}, ${etoile})">★</span>
+                        `).join('')}
+                        <span class="rating-display">${noteAffichee}</span>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function afficherPlanning() {
+            const planningRapide = document.getElementById('planning-rapide');
+            const planningComplet = document.getElementById('planning-complet');
+            
+            const html = jours.map(jour => {
+                const midi = planning[jour]?.midi;
+                const soir = planning[jour]?.soir;
+                
+                return `
+                    <div class="jour-item">
+                        <div class="jour-header">
+                            <h3>${jour}</h3>
+                        </div>
+                        <div class="repas-container">
+                            <div class="repas-slot midi" 
+                                 data-jour="${jour}" 
+                                 data-moment="midi"
+                                 ondragover="dragOver(event)"
+                                 ondragleave="dragLeave(event)"
+                                 ondrop="drop(event)">
+                                <div class="repas-label">🌞 Midi</div>
+                                <div class="repas-content ${!midi ? 'empty' : ''}">
+                                    ${midi ? `
+                                        <div class="plat-info">${midi.nom}</div>
+                                        <button class="delete-btn" onclick="retirerRepas('${jour}', 'midi')">Retirer</button>
+                                    ` : '<span style="font-size: 0.85em; color: #999;">Glissez une recette ici</span>'}
+                                </div>
+                            </div>
+                            <div class="repas-slot soir" 
+                                 data-jour="${jour}" 
+                                 data-moment="soir"
+                                 ondragover="dragOver(event)"
+                                 ondragleave="dragLeave(event)"
+                                 ondrop="drop(event)">
+                                <div class="repas-label">🌙 Soir</div>
+                                <div class="repas-content ${!soir ? 'empty' : ''}">
+                                    ${soir ? `
+                                        <div class="plat-info">${soir.nom}</div>
+                                        <button class="delete-btn" onclick="retirerRepas('${jour}', 'soir')">Retirer</button>
+                                    ` : '<span style="font-size: 0.85em; color: #999;">Glissez une recette ici</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            planningRapide.innerHTML = html;
+            planningComplet.innerHTML = html;
+        }
+
+        function ajouterRepas(jour, moment, recette) {
+            if (!planning[jour]) planning[jour] = {};
+            planning[jour][moment] = recette;
+            localStorage.setItem('planning', JSON.stringify(planning));
+            afficherPlanning();
+            mettreAJourCourses();
+            mettreAJourBadgeCourses();
+        }
+
+        function retirerRepas(jour, moment) {
+            if (planning[jour]) {
+                delete planning[jour][moment];
+                if (!planning[jour].midi && !planning[jour].soir) {
+                    delete planning[jour];
+                }
+            }
+            localStorage.setItem('planning', JSON.stringify(planning));
+            afficherPlanning();
+            mettreAJourCourses();
+            mettreAJourBadgeCourses();
+        }
+
+        function mettreAJourCourses() {
+            const coursesDiv = document.getElementById('courses-content');
+            const supermarchesSection = document.getElementById('supermarches-section');
+            
+            const ingredients = {};
+            Object.values(planning).forEach(jour => {
+                ['midi', 'soir'].forEach(moment => {
+                    if (jour[moment]) {
+                        jour[moment].ing.forEach(ing => {
+                            if (!ingredients[ing.n]) {
+                                ingredients[ing.n] = [];
+                            }
+                            ingredients[ing.n].push(ing.q);
+                        });
+                    }
+                });
+            });
+
+            const nbIngredients = Object.keys(ingredients).length;
+
+            if (nbIngredients === 0) {
+                coursesDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛒</div>
+                        <h3>Votre liste est vide</h3>
+                        <p>Ajoutez des recettes à votre planning pour générer votre liste de courses</p>
+                    </div>
+                `;
+                supermarchesSection.style.display = 'none';
+            } else {
+                coursesDiv.innerHTML = `
+                    <button class="copy-btn" onclick="copierListe()">
+                        📋 Copier la liste complète (${nbIngredients} ingrédients)
+                    </button>
+                    <div class="liste-courses" id="liste-ingredients">
+                        ${Object.entries(ingredients).map(([nom, quantites]) => {
+                            const estCopie = ingredientsCopies.has(nom);
+                            return `
+                            <div class="ingredient-item ${estCopie ? 'copied' : ''}" data-ingredient="${nom}">
+                                <span><strong>${nom}</strong> <span style="color: #666;">(${quantites.join(' + ')})</span></span>
+                                <div class="ingredient-actions">
+                                    ${estCopie ? 
+                                        '<span class="check-mark">✓</span>' :
+                                        supermarcheChoisi ? 
+                                            (rechercheDirecte ? 
+                                                `<button class="search-ingredient-btn" onclick="rechercherIngredient('${nom.replace(/'/g, "\\'")}')">
+                                                    🔍 Rechercher
+                                                </button>` :
+                                                `<button class="copy-ingredient-btn" onclick="copierIngredient('${nom.replace(/'/g, "\\'")}')">
+                                                    📋 Copier
+                                                </button>`)
+                                            : ''
+                                    }
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                `;
+                supermarchesSection.style.display = 'block';
+            }
+        }
+
+        function mettreAJourBadgeCourses() {
+            const ingredients = {};
+            Object.values(planning).forEach(jour => {
+                ['midi', 'soir'].forEach(moment => {
+                    if (jour[moment]) {
+                        jour[moment].ing.forEach(ing => {
+                            ingredients[ing.n] = true;
+                        });
+                    }
+                });
+            });
+            
+            const nb = Object.keys(ingredients).length;
+            const badge = document.getElementById('courses-badge');
+            badge.innerHTML = nb > 0 ? `<span class="courses-badge">${nb}</span>` : '';
+        }
+
+        function copierListe() {
+            const ingredients = {};
+            Object.values(planning).forEach(jour => {
+                ['midi', 'soir'].forEach(moment => {
+                    if (jour[moment]) {
+                        jour[moment].ing.forEach(ing => {
+                            if (!ingredients[ing.n]) ingredients[ing.n] = [];
+                            ingredients[ing.n].push(ing.q);
+                        });
+                    }
+                });
+            });
+
+            const texte = Object.entries(ingredients)
+                .map(([nom, qs]) => `${nom} (${qs.join(' + ')})`)
+                .join('\n');
+            
+            navigator.clipboard.writeText(texte).then(() => {
+                alert('✅ Liste complète copiée dans le presse-papier !\n\nVous pouvez la coller où vous voulez.');
+            }).catch(() => {
+                alert('❌ Erreur lors de la copie. Veuillez sélectionner et copier manuellement la liste.');
+            });
+        }
+
+        function choisirSupermarche(nom, url, directSearch) {
+            supermarcheChoisi = nom;
+            urlSupermarche = url;
+            rechercheDirecte = directSearch;
+            ingredientsCopies.clear();
+            
+            // Afficher le supermarché choisi
+            document.getElementById('supermarche-choisi').style.display = 'block';
+            document.getElementById('nom-supermarche').textContent = nom;
+            
+            // Rafraîchir la liste pour afficher les bons boutons
+            mettreAJourCourses();
+            
+            // Scroll vers la liste
+            document.getElementById('courses-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            if (directSearch) {
+                alert(`✅ ${nom} sélectionné !\n\n🔍 Mode Recherche Directe\nCliquez sur "Rechercher" pour chaque ingrédient.\nUn onglet s'ouvrira avec les résultats.`);
+            } else {
+                alert(`✅ ${nom} sélectionné !\n\n📋 Mode Copier-Coller\nCliquez sur "Copier" pour chaque ingrédient.\nPuis collez dans la barre de recherche du site.`);
+            }
+        }
+
+        function rechercherIngredient(nomIngredient) {
+            // Marquer comme copié
+            ingredientsCopies.add(nomIngredient);
+            
+            // Ouvrir recherche directe
+            const recherche = encodeURIComponent(nomIngredient);
+            window.open(urlSupermarche + recherche, '_blank');
+            
+            // Rafraîchir l'affichage
+            mettreAJourCourses();
+        }
+
+        function copierIngredient(nomIngredient) {
+            navigator.clipboard.writeText(nomIngredient).then(() => {
+                // Marquer comme copié
+                ingredientsCopies.add(nomIngredient);
+                
+                // Notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease;
+                `;
+                notification.textContent = `✓ "${nomIngredient}" copié ! Collez sur ${supermarcheChoisi}.`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+                
+                // Rafraîchir l'affichage
+                mettreAJourCourses();
+            }).catch(() => {
+                alert(`❌ Erreur : impossible de copier "${nomIngredient}"`);
+            });
+        }
+
+        function noterRecette(recetteId, note) {
+            notations[recetteId] = note;
+            localStorage.setItem('notations', JSON.stringify(notations));
+            afficherRecettes();
+        }
+
+        // Recherche de recettes via TheMealDB API
+        async function rechercherRecettesAPI() {
+            const searchInput = document.getElementById('search-input');
+            const searchBtn = document.getElementById('search-btn');
+            const loadingDiv = document.getElementById('loading-recipes');
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                alert('⚠️ Veuillez entrer un terme de recherche');
+                return;
+            }
+            
+            searchBtn.disabled = true;
+            searchBtn.textContent = '⏳ Recherche...';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.meals) {
+                    const resultats = data.meals.map(meal => {
+                        // Extraire les ingrédients
+                        const ingredients = [];
+                        for (let i = 1; i <= 20; i++) {
+                            const ing = meal[`strIngredient${i}`];
+                            const measure = meal[`strMeasure${i}`];
+                            if (ing && ing.trim()) {
+                                ingredients.push({n: ing, q: measure || ''});
+                            }
+                        }
+                        
+                        // Extraire les étapes
+                        const instructions = meal.strInstructions ? 
+                            meal.strInstructions.split('\r\n').filter(s => s.trim()) : 
+                            ['Voir les instructions complètes'];
+                        
+                        return {
+                            id: `api_${meal.idMeal}`,
+                            nom: meal.strMeal,
+                            cat: meal.strCategory || 'International',
+                            temps: '30min',
+                            p: 4,
+                            perso: false,
+                            source: 'TheMealDB',
+                            ing: ingredients,
+                            rec: instructions,
+                            image: meal.strMealThumb
+                        };
+                    });
+                    
+                    afficherModalResultats(resultats, query);
+                } else {
+                    alert('❌ Aucune recette trouvée. Essayez un autre terme.');
+                }
+            } catch (error) {
+                console.error('Erreur API:', error);
+                alert('❌ Erreur lors de la recherche. Vérifiez votre connexion.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Rechercher';
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function afficherModalResultats(resultats, query) {
+            const modal = document.getElementById('modal-resultats');
+            const titre = document.getElementById('titre-resultats');
+            const contenu = document.getElementById('contenu-resultats');
+            
+            titre.textContent = `📚 ${resultats.length} recette(s) trouvée(s) pour "${query}"`;
+            
+            contenu.innerHTML = resultats.map(r => `
+                <div class="recette-item" style="margin-bottom: 15px;" onclick="ajouterRecetteAPI(${r.id.replace('api_', '')})">
+                    ${r.image ? `<img src="${r.image}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 15px; margin-bottom: 10px;">` : ''}
+                    <span class="badge">${r.cat}</span>
+                    <span class="api-source">${r.source}</span>
+                    <h3>${r.nom}</h3>
+                    <div style="display: flex; gap: 15px; color: #666; font-size: 0.95em; margin-top: 10px;">
+                        <span>⏱️ ${r.temps}</span>
+                        <span>👥 ${r.p} pers.</span>
+                        <span>🛒 ${r.ing.length} ingrédients</span>
+                    </div>
+                    <button class="btn-primary" style="margin-top: 10px; padding: 10px 20px; font-size: 0.9em;" onclick="event.stopPropagation(); ajouterRecetteAPI(${r.id.replace('api_', '')})">
+                        ➕ Ajouter à mes recettes
+                    </button>
+                </div>
+            `).join('');
+            
+            // Stocker temporairement les résultats
+            window.resultatsRecherche = resultats;
+            
+            modal.classList.add('active');
+        }
+
+        function fermerModalResultats() {
+            document.getElementById('modal-resultats').classList.remove('active');
+        }
+
+        function ajouterRecetteAPI(mealId) {
+            const recette = window.resultatsRecherche.find(r => r.id === `api_${mealId}`);
+            if (!recette) return;
+            
+            // Vérifier si la recette existe déjà
+            const existe = recettesAPI.find(r => r.id === recette.id);
+            if (existe) {
+                alert('ℹ️ Cette recette est déjà dans votre liste !');
+                return;
+            }
+            
+            recettesAPI.push(recette);
+            alert(`✅ "${recette.nom}" ajoutée à vos recettes !`);
+            afficherRecettes();
+            fermerModalResultats();
+        }
+
+        // Générer une recette avec des templates prédéfinis
+        async function genererRecetteIA() {
+            const categories = [
+                {nom: 'Pâtes', exemples: ['Carbonara aux légumes', 'Pâtes crémeuses aux champignons', 'Spaghetti aglio e olio']},
+                {nom: 'Viandes', exemples: ['Poulet rôti aux herbes', 'Bœuf sauté aux légumes', 'Côtelettes de porc miel-moutarde']},
+                {nom: 'Poissons', exemples: ['Saumon grillé citronné', 'Dorade au four méditerranéenne', 'Cabillaud aux tomates']},
+                {nom: 'Végétarien', exemples: ['Buddha bowl quinoa', 'Curry de pois chiches', 'Gratin de légumes']},
+                {nom: 'Soupes', exemples: ['Velouté de butternut', 'Soupe de lentilles corail', 'Minestrone italien']},
+                {nom: 'Salades', exemples: ['Salade César revisitée', 'Bowl mexicain', 'Salade grecque authentique']},
+                {nom: 'Tartes', exemples: ['Tarte épinards-ricotta', 'Quiche lorraine classique', 'Tarte fine tomates']},
+                {nom: 'Desserts', exemples: ['Mousse au chocolat légère', 'Tarte aux pommes maison', 'Crumble aux fruits']}
+            ];
+            
+            const choixCategorie = categories[Math.floor(Math.random() * categories.length)];
+            const choixRecette = choixCategorie.exemples[Math.floor(Math.random() * choixCategorie.exemples.length)];
+            
+            const recetteNom = prompt(`🤖 Générer une recette personnalisée\n\nSuggestion: "${choixRecette}"\n\nOu entrez votre propre idée:`);
+            
+            if (!recetteNom || !recetteNom.trim()) return;
+            
+            const loadingDiv = document.getElementById('loading-recipes');
+            loadingDiv.style.display = 'block';
+            loadingDiv.innerHTML = '🤖 Génération de votre recette...';
+            
+            // Utiliser un template intelligent basé sur les mots-clés
+            const motsCles = recetteNom.toLowerCase();
+            let categorie = 'Végétarien';
+            
+            if (motsCles.includes('pâtes') || motsCles.includes('pasta') || motsCles.includes('spaghetti')) categorie = 'Pâtes';
+            else if (motsCles.includes('poulet') || motsCles.includes('boeuf') || motsCles.includes('viande')) categorie = 'Viandes';
+            else if (motsCles.includes('poisson') || motsCles.includes('saumon') || motsCles.includes('cabillaud')) categorie = 'Poissons';
+            else if (motsCles.includes('soupe') || motsCles.includes('velouté')) categorie = 'Soupes';
+            else if (motsCles.includes('salade') || motsCles.includes('bowl')) categorie = 'Salades';
+            else if (motsCles.includes('tarte') || motsCles.includes('quiche')) categorie = 'Tartes';
+            else if (motsCles.includes('dessert') || motsCles.includes('gâteau') || motsCles.includes('mousse')) categorie = 'Desserts';
+            
+            // Templates d'ingrédients par catégorie
+            const templatesIngredients = {
+                'Pâtes': [
+                    {n:"Pâtes", q:"400g"},
+                    {n:"Huile d'olive", q:"3 c.à.s"},
+                    {n:"Ail", q:"2 gousses"},
+                    {n:"Sel et poivre", q:"Au goût"}
+                ],
+                'Viandes': [
+                    {n:"Viande au choix", q:"600g"},
+                    {n:"Oignons", q:"2"},
+                    {n:"Herbes de Provence", q:"1 c.à.s"},
+                    {n:"Huile d'olive", q:"2 c.à.s"}
+                ],
+                'Végétarien': [
+                    {n:"Légumes variés", q:"800g"},
+                    {n:"Huile d'olive", q:"3 c.à.s"},
+                    {n:"Épices", q:"2 c.à.s"},
+                    {n:"Sel et poivre", q:"Au goût"}
+                ]
+            };
+            
+            const ingredients = templatesIngredients[categorie] || templatesIngredients['Végétarien'];
+            
+            const etapes = [
+                "Préparer et couper tous les ingrédients",
+                "Faire chauffer l'huile dans une poêle ou casserole",
+                "Faire revenir les aromates (ail, oignons) quelques minutes",
+                "Ajouter les ingrédients principaux et cuire selon les indications",
+                "Assaisonner et ajuster le goût",
+                "Servir chaud et déguster"
+            ];
+            
+            setTimeout(() => {
+                const nouvelleRecette = {
+                    id: prochainId++,
+                    nom: recetteNom,
+                    cat: categorie,
+                    temps: '30min',
+                    p: 4,
+                    ing: ingredients,
+                    rec: etapes,
+                    perso: true,
+                    source: '🤖 Générée'
+                };
+                
+                recettesPerso.push(nouvelleRecette);
+                localStorage.setItem('recettesPerso', JSON.stringify(recettesPerso));
+                
+                loadingDiv.style.display = 'none';
+                loadingDiv.innerHTML = '🔄 Recherche en cours...';
+                
+                alert(`✅ Recette "${nouvelleRecette.nom}" créée !\n\n💡 Conseil: Modifiez-la en cliquant dessus pour personnaliser les ingrédients et les étapes.`);
+                categorieActive = 'Tous';
+                afficherFiltres();
+                afficherRecettes();
+            }, 1500);
+        }
+
+        // Gestion de la touche Entrée pour la recherche
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        rechercherRecettesAPI();
+                    }
+                });
+            }
+        });
+
+        function ouvrirModal(recetteId) {
+            const recettes = getToutesRecettes();
+            recetteActive = recettes.find(r => r.id === recetteId);
+            const modal = document.getElementById('modal');
+            const note = notations[recetteId] || 0;
+            
+            document.getElementById('modal-titre').textContent = recetteActive.nom;
+            document.getElementById('modal-info').innerHTML = `
+                ⏱️ ${recetteActive.temps || 'N/A'} • 👥 ${recetteActive.p} pers. • 📁 ${recetteActive.cat}
+                ${recetteActive.perso ? ' • <span style="color: #FFD700;">★ MA RECETTE</span>' : ''}
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.9em;">Votre note :</span>
+                    ${[1,2,3,4,5].map(etoile => `
+                        <span class="star ${etoile <= note ? 'filled' : 'empty'}" 
+                              style="font-size: 1.5em; cursor: pointer;"
+                              onclick="noterRecette(${recetteId}, ${etoile}); ouvrirModal(${recetteId})">★</span>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('modal-ingredients').innerHTML = recetteActive.ing.map(ing => `
+                <div style="padding: 12px; background: linear-gradient(135deg, #FFE5EC, #FFF0F5); border-radius: 12px; display: flex; justify-content: space-between; border: 2px solid #FF6B9D;">
+                    <span><strong>${ing.n}</strong></span>
+                    <span style="color: #666;">${ing.q}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('modal-preparation').innerHTML = recetteActive.rec.map((etape, idx) => `
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; padding: 18px; background: linear-gradient(135deg, #FFF9E6, #FFFEF0); border-radius: 15px; border-left: 6px solid #FF6B9D;">
+                    <div style="background: linear-gradient(135deg, #FF6B9D, #FFA07A); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3);">
+                        ${idx + 1}
+                    </div>
+                    <p style="line-height: 1.6; color: #333;">${etape}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('modal-repas').innerHTML = jours.flatMap(jour => [
+                {jour, moment: 'midi', label: `${jour} 🌞`},
+                {jour, moment: 'soir', label: `${jour} 🌙`}
+            ]).map(({jour, moment, label}) => {
+                const estSelectionne = planning[jour]?.[moment]?.id === recetteActive.id;
+                return `
+                    <button class="repas-btn ${estSelectionne ? 'selected' : ''}" 
+                            onclick="toggleRepas('${jour}', '${moment}')">
+                        ${estSelectionne ? '✓ ' : ''}${label}
+                    </button>
+                `;
+            }).join('');
+            
+            modal.classList.add('active');
+        }
+
+        function fermerModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function toggleRepas(jour, moment) {
+            if (planning[jour]?.[moment]?.id === recetteActive.id) {
+                retirerRepas(jour, moment);
+            } else {
+                ajouterRepas(jour, moment, recetteActive);
+            }
+            
+            document.getElementById('modal-repas').innerHTML = jours.flatMap(j => [
+                {jour: j, moment: 'midi', label: `${j} 🌞`},
+                {jour: j, moment: 'soir', label: `${j} 🌙`}
+            ]).map(({jour: j, moment: m, label}) => {
+                const estSelectionne = planning[j]?.[m]?.id === recetteActive.id;
+                return `
+                    <button class="repas-btn ${estSelectionne ? 'selected' : ''}" 
+                            onclick="toggleRepas('${j}', '${m}')">
+                        ${estSelectionne ? '✓ ' : ''}${label}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function ouvrirModalNouvelleRecette() {
+            document.getElementById('modal-nouvelle-recette').classList.add('active');
+        }
+
+        function fermerModalNouvelleRecette() {
+            document.getElementById('modal-nouvelle-recette').classList.remove('active');
+            document.getElementById('form-nouvelle-recette').reset();
+            document.getElementById('ingredients-inputs').innerHTML = `
+                <div class="ingredient-row">
+                    <input type="text" placeholder="Nom ingrédient" class="ing-nom" required>
+                    <input type="text" placeholder="Quantité" class="ing-qte" required>
+                    <button type="button" class="btn-add" onclick="ajouterIngredient()">+</button>
+                </div>
+            `;
+            document.getElementById('etapes-list').innerHTML = `
+                <div class="etape-row">
+                    <div class="etape-number">1</div>
+                    <textarea rows="3" class="etape-text" required placeholder="Décrivez l'étape 1..."></textarea>
+                    <button type="button" class="btn-add" onclick="ajouterEtape()">+</button>
+                </div>
+            `;
+        }
+
+        function ajouterIngredient() {
+            const container = document.getElementById('ingredients-inputs');
+            const div = document.createElement('div');
+            div.className = 'ingredient-row';
+            div.innerHTML = `
+                <input type="text" placeholder="Nom ingrédient" class="ing-nom" required>
+                <input type="text" placeholder="Quantité" class="ing-qte" required>
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">−</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function ajouterEtape() {
+            const container = document.getElementById('etapes-list');
+            const numero = container.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'etape-row';
+            div.innerHTML = `
+                <div class="etape-number">${numero}</div>
+                <textarea rows="3" class="etape-text" required placeholder="Décrivez l'étape ${numero}..."></textarea>
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove(); renumeroterEtapes()">−</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function renumeroterEtapes() {
+            const etapes = document.querySelectorAll('#etapes-list .etape-row');
+            etapes.forEach((etape, idx) => {
+                etape.querySelector('.etape-number').textContent = idx + 1;
+                etape.querySelector('textarea').placeholder = `Décrivez l'étape ${idx + 1}...`;
+            });
+        }
+
+        function sauvegarderNouvelleRecette(event) {
+            event.preventDefault();
+            
+            const nom = document.getElementById('nom-recette').value;
+            const categorie = document.getElementById('categorie-recette').value;
+            const temps = document.getElementById('temps-recette').value || 'N/A';
+            const portions = parseInt(document.getElementById('portions-recette').value);
+            
+            const ingredients = Array.from(document.querySelectorAll('#ingredients-inputs .ingredient-row'))
+                .map(row => ({
+                    n: row.querySelector('.ing-nom').value,
+                    q: row.querySelector('.ing-qte').value
+                }));
+            
+            const etapes = Array.from(document.querySelectorAll('#etapes-list .etape-text'))
+                .map(textarea => textarea.value);
+            
+            const nouvelleRecette = {
+                id: prochainId++,
+                nom: nom,
+                cat: categorie,
+                temps: temps,
+                p: portions,
+                ing: ingredients,
+                rec: etapes,
+                perso: true
+            };
+            
+            recettesPerso.push(nouvelleRecette);
+            localStorage.setItem('recettesPerso', JSON.stringify(recettesPerso));
+            
+            fermerModalNouvelleRecette();
+            afficherRecettes();
+            
+            alert('✅ Recette sauvegardée avec succès !');
+        }
+
+        function supprimerRecette(id) {
+            if (confirm('Voulez-vous vraiment supprimer cette recette ?')) {
+                recettesPerso = recettesPerso.filter(r => r.id !== id);
+                localStorage.setItem('recettesPerso', JSON.stringify(recettesPerso));
+                afficherRecettes();
+            }
+        }
+
+        function changerVue(vue) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + vue).classList.add('active');
+            
+            if (vue === 'courses') {
+                mettreAJourCourses();
+            }
+        }
+
+        // Fonctions de glisser-déposer
+        let recetteDragee = null;
+
+        function dragStart(event) {
+            const recetteId = parseInt(event.target.dataset.recetteId);
+            recetteDragee = getToutesRecettes().find(r => r.id === recetteId);
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        }
+
+        function dragEnd(event) {
+            event.target.classList.remove('dragging');
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            
+            const jour = event.currentTarget.dataset.jour;
+            const moment = event.currentTarget.dataset.moment;
+            
+            if (recetteDragee) {
+                ajouterRepas(jour, moment, recetteDragee);
+                recetteDragee = null;
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target.id === 'modal') fermerModal();
+            if (event.target.id === 'modal-nouvelle-recette') fermerModalNouvelleRecette();
+            if (event.target.id === 'modal-resultats') fermerModalResultats();
+            if (event.target.id === 'modal-ia') fermerModalIA();
+        }
+
+        init();
+    </script>
+</body>
+</html>
